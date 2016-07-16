@@ -3,6 +3,14 @@
 #include<iostream>
 #include<cmath>
 
+std::string MATRIX_ERR_INVERT_NONSQUARE = "Cannot invert non-square matrix";
+std::string MATRIX_ERR_INVERT_DETERMINANT = "Determinant is zero; cannot invert";
+std::string MATRIX_ERR_MULTIPLY_DIMENSION = "Cannot mutliply matrices; height_1 must equal width_2";
+std::string MATRIX_ERR_COPY_DIMENSION = "Cannot copy matrix as dimensions are not the same";
+std::string MATRIX_ERR_COPYTRANSPOSE_DIMENSION = "Cannot copy matrix transpose as dimensions are not the same";
+std::string MATRIX_ERR_ADD_DIMENSION = "Cannot add matrices as the dimensions are not the same";
+std::string MATRIX_ERR_DETERMINANT_NONSQUARE = "Cannot compute the determinant of a non-square matrix";
+
 class Matrix {
 private:
 	bool _canDelete = true;
@@ -34,7 +42,8 @@ private:
 	}
 	void addMatrix(Matrix &other) {
 		if (_height != other._height || _width != other._width) {
-			throw (std::string) "Cannot add matrices; not same dimensions";
+			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
 		}
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
@@ -51,7 +60,8 @@ private:
 	}
 	float** multiplyMatrix(Matrix &other) {
 		if (_width != other._height) {
-			throw (std::string) "Cannot mutliply matrices; height_1 must equal width_2";
+			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
 		}
 		float** newMatrix = createMatrix(other._width, _height);
 		for (unsigned int i = 0; i < _height; i++) {
@@ -77,7 +87,7 @@ private:
 		float sum = 0;
 		for (unsigned int i = 0; i < size; i++) {
 			float** submatrix = getSubmatrix(matrix, i, 0, size, size);
-			sum += pow(-1,i)*matrix[0][i]*getDeterminant(submatrix,size-1);
+			sum += (float) pow(-1,i)*matrix[0][i]*getDeterminant(submatrix,size-1);
 			deleteMatrix(submatrix,size-1);
 		}
 		return sum;
@@ -135,7 +145,8 @@ public:
 	}
 	void fromMatrixMultiplication(Matrix &a, Matrix &b) {
 		if (a._width != b._height) {
-			throw (std::string) "Cannot mutliply matrices; height_1 must equal width_2";
+			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
 		}
 		float** newMatrix = _matrix;
 		if (_width !=b._width && _height !=a._height) {
@@ -156,7 +167,8 @@ public:
 	void copyMatrix(float** matrix, unsigned int width, unsigned int height) {
 		//copies a 2D array to this->_matrix
 		if (_width != width || _height != height) {
-			throw (std::string) "Cannot copy matrix as dimensions are not the same";
+			std::cout << MATRIX_ERR_COPY_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_COPY_DIMENSION;
 		}
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
@@ -170,7 +182,8 @@ public:
 	void copyMatrixTranspose(float** matrix, unsigned int width, unsigned int height) {
 		//copies a 2D array to this->_matrix
 		if (_width != height || _height != width) {
-			throw (std::string) "Cannot copy matrix transpose as dimensions are not the same";
+			std::cout << MATRIX_ERR_COPY_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_COPY_DIMENSION;
 		}
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
@@ -182,15 +195,35 @@ public:
 		copyMatrixTranspose(matrix._matrix, matrix._width, matrix._height);
 	}
 	void diagonalise() {
-		for (int i = 0; i < _height; i++) {
-			for (int j = 0; j < _width; j++) {
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
 				if (i != j) {
 					_matrix[i][j] = 0;
 				}
 			}
 		}
 	}
-
+	void invert() {
+		// to get inverse, get cofactor matrix, divide by determinant and transpose
+		float determinant = getDeterminant();
+		if (_width != _height) {
+			std::cout << MATRIX_ERR_INVERT_NONSQUARE.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_INVERT_NONSQUARE;
+		}
+		if (determinant == 0) {
+			std::cout << MATRIX_ERR_INVERT_DETERMINANT.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_INVERT_DETERMINANT;
+		}
+		float** inverse = createMatrix(_width, _height);
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				//swapping i and j for array indexes as need to take transpose
+				inverse[j][i] = (float) pow(-1,i+j) / determinant * getDeterminant(getSubmatrix(_matrix, j, i, _width, _height),_width-1);
+			}
+		}
+		deleteMatrix();
+		_matrix = inverse;
+	}
 
 	float** getSubmatrix(float** matrix, unsigned int x, unsigned int y, unsigned int currentWidth, unsigned int currentHeight) {
 		//return an (height-1)x(width-1) matrix
@@ -227,7 +260,8 @@ public:
 	}
 	float getDeterminant() {
 		if (_width != _height) {
-			throw (std::string) "Cannot take determinant of non-square matrix";
+			std::cout << MATRIX_ERR_DETERMINANT_NONSQUARE.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_DETERMINANT_NONSQUARE;
 		}
 		return getDeterminant(_matrix,_width);
 	}
