@@ -33,47 +33,13 @@ private:
 		}
 		delete[] _matrix;
 	}
-	void addScalar(float val) {
-		for (unsigned int i = 0; i < _height; i++) {
-			for (unsigned int j = 0; j < _width; j++) {
-				_matrix[i][j] += val;
+	void printMatrix(float** matrix, unsigned int width, unsigned int height) {
+		for (unsigned int i = 0; i < height; i++) {
+			for (unsigned int j = 0; j < width; j++) {
+				std::cout << matrix[i][j] << "\t";
 			}
+			std::cout << std::endl;
 		}
-	}
-	void addMatrix(Matrix &other) {
-		if (_height != other._height || _width != other._width) {
-			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
-			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
-		}
-		for (unsigned int i = 0; i < _height; i++) {
-			for (unsigned int j = 0; j < _width; j++) {
-				_matrix[i][j] += other._matrix[i][j];
-			}
-		}
-	}
-	void multiplyScalar(float val) {
-		for (unsigned int i = 0; i < _height; i++) {
-			for (unsigned int j = 0; j < _width; j++) {
-				_matrix[i][j] *= val;
-			}
-		}
-	}
-	float** multiplyMatrix(Matrix &other) {
-		if (_width != other._height) {
-			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
-			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
-		}
-		float** newMatrix = createMatrix(other._width, _height);
-		for (unsigned int i = 0; i < _height; i++) {
-			for (unsigned int j = 0; j < other._width; j++) {
-				float sum = 0;
-				for (unsigned int k = 0; k < _width; k++) {
-					sum += _matrix[i][k] * other._matrix[k][j];
-				}
-				newMatrix[i][j] = sum;
-			}
-		}
-		return newMatrix;
 	}
 	float getDeterminant(float** matrix, unsigned int size) {
 		//std::cout << "size " << size << std::endl;
@@ -92,6 +58,7 @@ private:
 		}
 		return sum;
 	}
+	
 public:
 	Matrix(unsigned int width, unsigned int height) :_width(width), _height(height) {
 		_matrix = createMatrix(_width, _height);
@@ -105,14 +72,6 @@ public:
 
 	void printMatrix() {
 		printMatrix(_matrix, _width, _height);
-	}
-	void printMatrix(float** matrix, unsigned int width, unsigned int height) {
-		for (unsigned int i = 0; i < height; i++) {
-			for (unsigned int j = 0; j < width; j++) {
-				std::cout << matrix[i][j] << "\t";
-			}
-			std::cout << std::endl;
-		}
 	}
 	void set(unsigned int x, unsigned int y, float val) {
 		_matrix[y][x] = val;
@@ -224,7 +183,71 @@ public:
 		deleteMatrix();
 		_matrix = inverse;
 	}
-
+	void addScalar(float val) {
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				_matrix[i][j] += val;
+			}
+		}
+	}
+	void addMatrix(Matrix &other) {
+		if (_height != other._height || _width != other._width) {
+			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
+		}
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				_matrix[i][j] += other._matrix[i][j];
+			}
+		}
+	}
+	void addMatrix(float** matrix, unsigned int width, unsigned int height) {
+		if (_height != height || _width != width) {
+			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
+		}
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				_matrix[i][j] += matrix[i][j];
+			}
+		}
+	}
+	void subtractMatrix(float** matrix, unsigned int width, unsigned int height) {
+		if (_height != height || _width != width) {
+			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
+		}
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				_matrix[i][j] -= matrix[i][j];
+			}
+		}
+	}
+	void multiplyScalar(float val) {
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				_matrix[i][j] *= val;
+			}
+		}
+	}
+		
+	float** multiplyMatrix(Matrix &other) {
+		if (_width != other._height) {
+			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
+			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
+		}
+		float** newMatrix = createMatrix(other._width, _height);
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < other._width; j++) {
+				float sum = 0;
+				for (unsigned int k = 0; k < _width; k++) {
+					sum += _matrix[i][k] * other._matrix[k][j];
+				}
+				newMatrix[i][j] = sum;
+			}
+		}
+		return newMatrix;
+	}
 	float** getSubmatrix(float** matrix, unsigned int x, unsigned int y, unsigned int currentWidth, unsigned int currentHeight) {
 		//return an (height-1)x(width-1) matrix
 		//float
@@ -265,7 +288,7 @@ public:
 		}
 		return getDeterminant(_matrix,_width);
 	}
-
+	
 	void operator+=(float val) {
 		addScalar(val);
 	}
