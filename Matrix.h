@@ -19,19 +19,18 @@ private:
 	unsigned int _height;
 
 	void deleteMatrix(float** matrix, unsigned int height) {
+		//delete the given 2D array
 		for (unsigned int i = 0; i < height; i++) {
 			delete[] matrix[i];
 		}
 		delete[] matrix;
 	}
 	void deleteMatrix() {
+		//delete _matrix
 		if (!_canDelete) {
 			return;
 		}
-		for (unsigned int i = 0; i < _height; i++) {
-			delete[] _matrix[i];
-		}
-		delete[] _matrix;
+		deleteMatrix(_matrix, _height);
 	}
 	void printMatrix(float** matrix, unsigned int width, unsigned int height) {
 		for (unsigned int i = 0; i < height; i++) {
@@ -42,7 +41,7 @@ private:
 		}
 	}
 	float getDeterminant(float** matrix, unsigned int size) {
-		//std::cout << "size " << size << std::endl;
+		//recursive method to get the determinant of nxn matrix
 		if (size == 1) {
 			return matrix[0][0];
 		}
@@ -63,14 +62,30 @@ public:
 	Matrix(unsigned int width, unsigned int height) :_width(width), _height(height) {
 		_matrix = createMatrix(_width, _height);
 	}
+	Matrix():_width(1),_height(1) {
+		_matrix = createMatrix(_width, _height);
+	}
 	Matrix(float** matrix, unsigned int width, unsigned int height) :_width(width), _height(height),_matrix(matrix) {
 	}
 	~Matrix() {
+		if (_canDelete) {
+			deleteMatrix();
+		}
+		_canDelete = false;
+	}
+	void deleteAll() {
+		if (!_canDelete) {
+			return;
+		}
 		deleteMatrix();
 		_canDelete = false;
 	}
-
 	void printMatrix() {
+		printMatrix(_matrix, _width, _height);
+	}
+	void printMatrix(std::string str) {
+		std::cout << "======================\n" << str.c_str() << std::endl;
+		std::cout<<"width: "<<_width<<", height: "<<_height<<"\n======================" << std::endl;
 		printMatrix(_matrix, _width, _height);
 	}
 	void set(unsigned int x, unsigned int y, float val) {
@@ -83,6 +98,7 @@ public:
 		_height = newHeight;
 	}
 	void transpose() {
+		//convert mxn to nxm matrix
 		float** matrix2 = createMatrix(_height, _width);
 		for (unsigned int i = 0; i < _width; i++) {
 			for (unsigned int j = 0; j < _height; j++) {
@@ -96,28 +112,30 @@ public:
 		_height = temp;
 	}
 	void randomise(int max) {
+		//
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				_matrix[i][j] = (float)(rand() % max);
 			}
 		}
 	}
-	void fromMatrixMultiplication(Matrix &a, Matrix &b) {
-		if (a._width != b._height) {
+	void fromMatrixMultiplication(Matrix *a, Matrix *b) {
+		//set this->_matrix to the matrix created from multilplying axb
+		if (a->_width != b->_height) {
 			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
 		}
 		float** newMatrix = _matrix;
-		if (_width !=b._width && _height !=a._height) {
-			newMatrix = createMatrix(b._width, a._height);
-			_width = b._width;
-			_height = a._height;
+		if (_width !=b->_width && _height !=a->_height) {
+			newMatrix = createMatrix(b->_width, a->_height);
+			_width = b->_width;
+			_height = a->_height;
 		}
-		for (unsigned int i = 0; i < a._height; i++) {
-			for (unsigned int j = 0; j < b._width; j++) {
+		for (unsigned int i = 0; i < a->_height; i++) {
+			for (unsigned int j = 0; j < b->_width; j++) {
 				float sum = 0;
-				for (unsigned int k = 0; k < a._width; k++) {
-					sum += a._matrix[i][k] * b._matrix[k][j];
+				for (unsigned int k = 0; k < a->_width; k++) {
+					sum += a->_matrix[i][k] * b->_matrix[k][j];
 				}
 				newMatrix[i][j] = sum;
 			}
@@ -135,8 +153,8 @@ public:
 			}
 		}
 	}
-	void copyMatrix(Matrix &matrix) {
-		copyMatrix(matrix._matrix, matrix._width, matrix._height);
+	void copyMatrix(Matrix *matrix) {
+		copyMatrix(matrix->_matrix, matrix->_width, matrix->_height);
 	}
 	void copyMatrixTranspose(float** matrix, unsigned int width, unsigned int height) {
 		//copies a 2D array to this->_matrix
@@ -150,10 +168,11 @@ public:
 			}
 		}
 	}
-	void copyMatrixTranspose(Matrix &matrix) {
-		copyMatrixTranspose(matrix._matrix, matrix._width, matrix._height);
+	void copyMatrixTranspose(Matrix *matrix) {
+		copyMatrixTranspose(matrix->_matrix, matrix->_width, matrix->_height);
 	}
 	void diagonalise() {
+		//set all elements except the leading diagonal to zero
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				if (i != j) {
@@ -163,7 +182,9 @@ public:
 		}
 	}
 	void invert() {
+		//invert this matrix
 		// to get inverse, get cofactor matrix, divide by determinant and transpose
+
 		float determinant = getDeterminant();
 		if (_width != _height) {
 			std::cout << MATRIX_ERR_INVERT_NONSQUARE.c_str() << std::endl;
@@ -190,14 +211,14 @@ public:
 			}
 		}
 	}
-	void addMatrix(Matrix &other) {
-		if (_height != other._height || _width != other._width) {
+	void addMatrix(Matrix *other) {
+		if (_height != other->_height || _width != other->_width) {
 			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
 		}
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
-				_matrix[i][j] += other._matrix[i][j];
+				_matrix[i][j] += other->_matrix[i][j];
 			}
 		}
 	}
@@ -230,18 +251,22 @@ public:
 			}
 		}
 	}
-		
-	float** multiplyMatrix(Matrix &other) {
-		if (_width != other._height) {
+	
+	float** getMatrix() {
+		return _matrix;
+	}
+	float** multiplyMatrix(Matrix *other) {
+		//multiply this matrix by other (this matrix is on LHS)
+		if (_width != other->_height) {
 			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
 		}
-		float** newMatrix = createMatrix(other._width, _height);
+		float** newMatrix = createMatrix(other->_width, _height);
 		for (unsigned int i = 0; i < _height; i++) {
-			for (unsigned int j = 0; j < other._width; j++) {
+			for (unsigned int j = 0; j < other->_width; j++) {
 				float sum = 0;
 				for (unsigned int k = 0; k < _width; k++) {
-					sum += _matrix[i][k] * other._matrix[k][j];
+					sum += _matrix[i][k] * other->_matrix[k][j];
 				}
 				newMatrix[i][j] = sum;
 			}
@@ -282,6 +307,7 @@ public:
 		return _matrix[y][x];
 	}
 	float getDeterminant() {
+		//return the determinant for this matrix; can only be done for square matrix
 		if (_width != _height) {
 			std::cout << MATRIX_ERR_DETERMINANT_NONSQUARE.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_DETERMINANT_NONSQUARE;
@@ -292,7 +318,7 @@ public:
 	void operator+=(float val) {
 		addScalar(val);
 	}
-	void operator+=(Matrix &other) {
+	void operator+=(Matrix *other) {
 		addMatrix(other);
 	}
 	void operator-=(float val) {
@@ -304,16 +330,16 @@ public:
 	void operator*=(float val) {
 		multiplyScalar(val);
 	}
-	void operator*=(Matrix &other) {
+	void operator*=(Matrix *other) {
 		unsigned int newWidth = 0; 
 		unsigned int newHeight = 0;
 		float** newMatrix = multiplyMatrix(other);
 		deleteMatrix();
 		_matrix = newMatrix;
-		_width = other._width;
+		_width = other->_width;
 	}
-	float** operator*(Matrix &other) {
-		return multiplyMatrix(other);//, other._width, other._height);
+	float** operator*(Matrix *other) {
+		return multiplyMatrix(other);
 	}
 };
 #endif
