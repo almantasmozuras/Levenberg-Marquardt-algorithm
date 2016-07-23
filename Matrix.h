@@ -73,13 +73,6 @@ public:
 		}
 		_canDelete = false;
 	}
-	void deleteAll() {
-		if (!_canDelete) {
-			return;
-		}
-		deleteMatrix();
-		_canDelete = false;
-	}
 	void printMatrix() {
 		printMatrix(_matrix, _width, _height);
 	}
@@ -314,7 +307,25 @@ public:
 		}
 		return getDeterminant(_matrix,_width);
 	}
-	
+	float getSum() {
+		float sum = 0; 
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				sum += _matrix[i][j];
+			}
+		}
+		return sum;
+	}
+	float getSquareSum() {
+		float sum = 0;
+		for (unsigned int i = 0; i < _height; i++) {
+			for (unsigned int j = 0; j < _width; j++) {
+				sum += _matrix[i][j]*_matrix[i][j];
+			}
+		}
+		return sum;
+	}
+
 	void operator+=(float val) {
 		addScalar(val);
 	}

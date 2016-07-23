@@ -7,7 +7,7 @@ class LevenbergMarquardtAlgorithm {
 protected:
 	//_foo ->foo member func of class
 	//foo_ ->foo should not be deleted (created on heap outside class or is returned to user at some point)
-	bool print = true;
+	bool print = false;
 	MultiVariableFunction* _func;
 	unsigned int _nParams = 0;//no of params, passed in constructor
 	unsigned int _nPoints = 0;//number of data points, passed in run() args
@@ -15,14 +15,16 @@ protected:
 	bool _canDelete = true;
 	bool _initialised = false;
 	float _lambda = 0.95f;//damping parameter
+	float _v = 0.95f;
+	float lastSum = FLT_MAX;
 	float* _currentParams_;
 	float* _initGuess_;//initial parameter guess; passed in constructor
 	float* _partialDerivatives;//array of partial derivatives
 	float** _data_;//passed in constructor
 	float** _funcValues;
 	float** _jacobian;
-	Matrix *matrixJ, *matrixJT, *matrixDiagJTJ, *matrixYF,*matrixF, *matrixLHS, *matrixRHS, *matrixDelta;
-	std::vector<Matrix*> matrixArr = { matrixJ,matrixJT,matrixDiagJTJ,matrixYF,matrixF,matrixLHS,matrixRHS,matrixDelta };
+	Matrix *matrixJ, *matrixJT, *matrixDiagJTJ, *matrixYF, *matrixLHS, *matrixRHS, *matrixDelta;
+	std::vector<Matrix*> matrixArr = { matrixJ,matrixJT,matrixDiagJTJ,matrixYF,matrixLHS,matrixRHS,matrixDelta };
 	void deleteAll() {
 		if (!_canDelete) {
 			return;
@@ -57,7 +59,6 @@ protected:
 		}
 		for (unsigned int i = 0; i < _nParams; i++) {
 			_currentParams_[i] = _initGuess_[i];
-			std::cout << _currentParams_[i] << std::endl;
 		}
 	}
 	void adjustParameters(float* delta) {
@@ -75,15 +76,13 @@ protected:
 				_jacobian[i][j] = _partialDerivatives[j];
 			}
 		}
-		std::cout << "forming jacobian done" << std::endl;
 	}
 	void runAlgorithm() {	
 		printStatus("runAlgorithm");
 		matrixJT = new Matrix(_nPoints, _nParams);		//
 		matrixJ = new Matrix(_nParams, _nPoints);		//
 		matrixDiagJTJ = new Matrix(_nParams, _nParams);	//formed from lambda*diag(JT*J)
-		matrixYF = new Matrix(1, _nParams);
-		matrixF = new Matrix(1, _nParams);
+		matrixYF = new Matrix(1, _nPoints);				
 		matrixLHS = new Matrix(_nParams, _nParams);		//formed from (JT*J - lambda*diag(JT*J)).inverse
 		matrixRHS = new Matrix(1, _nParams);
 		matrixDelta = new Matrix(1, _nParams);
@@ -92,13 +91,26 @@ protected:
 		while (true) {
 			formJacobian();
 			matrixLHS = getLHS();
-			matrixLHS->printMatrix("LHS");
-			//matrixRHS = getRHS();
-			//matrixDelta->fromMatrixMultiplication(matrixLHS, matrixRHS);
-			//adjustParameters(matrixDelta->getMatrix()[0]);
+			matrixRHS = getRHS();
+			matrixDelta->fromMatrixMultiplication(matrixLHS, matrixRHS);
+			adjustParameters(matrixDelta->getMatrix()[0]);
 			_currentIterations++;
-			break;
+			if (checkSquareSum()) {
+				break;
+			}
 		}
+		printArray(_currentParams_, _nParams);
+	}
+	bool checkSquareSum() {
+		float temp = matrixDelta->getSquareSum();
+		if (temp < lastSum) {
+			_lambda *= _v;
+		}
+		lastSum = temp;
+		if (_currentIterations > 10) {
+			return true;
+		}
+		return false;
 	}
 	Matrix* getLHS() {
 		//return the left hand side of the LMA equation (JT * J  +  lambda*diag(JT*J))
@@ -116,13 +128,24 @@ protected:
 	Matrix* getRHS() {
 		//_y_ and _funcValues are float[1][_nPoints] (ie height 1), therefore form from matrix transpose
 		printStatus("getRHS");
-		matrixYF->copyMatrixTranspose(_funcValues, 1, _nPoints);
+		matrixYF->copyMatrixTranspose(_funcValues, _nPoints, 1);
 		matrixRHS->fromMatrixMultiplication(matrixJT, matrixYF);
 		return matrixRHS;
 	}
 	void printStatus(std::string str) {
 		if (print) {
 			std::cout << str.c_str() << std::endl;
+		}
+	}
+	void printArray(float* arr, int len) {
+		for (int i = 0; i < len; i++) {
+			std::cout << arr[i] << "\t";
+		}
+		std::cout << std::endl;
+	}
+	void printArray(float** arr, int height, int len) {
+		for (int i = 0; i < height; i++) {
+			printArray(arr[i], len);
 		}
 	}
 public:
