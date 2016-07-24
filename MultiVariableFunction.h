@@ -15,8 +15,8 @@ public:
 	unsigned int getNParams() {
 		return _nParams;
 	}
-	virtual float getValue(float* params, float &x) = 0;
-	virtual float* getJacobian(float* params, float* returnedArray, float &x) = 0;
+	virtual double getValue(double* params, double x) = 0;
+	virtual double* getJacobian(double* params, double* returnedArray, double x) = 0;
 };
 
 #endif

@@ -14,11 +14,11 @@ std::string MATRIX_ERR_DETERMINANT_NONSQUARE = "Cannot compute the determinant o
 class Matrix {
 private:
 	bool _canDelete = true;
-	float** _matrix;
+	double** _matrix;
 	unsigned int _width;
 	unsigned int _height;
 
-	void deleteMatrix(float** matrix, unsigned int height) {
+	void deleteMatrix(double** matrix, unsigned int height) {
 		//delete the given 2D array
 		for (unsigned int i = 0; i < height; i++) {
 			delete[] matrix[i];
@@ -32,7 +32,7 @@ private:
 		}
 		deleteMatrix(_matrix, _height);
 	}
-	void printMatrix(float** matrix, unsigned int width, unsigned int height) {
+	void printMatrix(double** matrix, unsigned int width, unsigned int height) {
 		for (unsigned int i = 0; i < height; i++) {
 			for (unsigned int j = 0; j < width; j++) {
 				std::cout << matrix[i][j] << "\t";
@@ -40,7 +40,7 @@ private:
 			std::cout << std::endl;
 		}
 	}
-	float getDeterminant(float** matrix, unsigned int size) {
+	double getDeterminant(double** matrix, unsigned int size) {
 		//recursive method to get the determinant of nxn matrix
 		if (size == 1) {
 			return matrix[0][0];
@@ -49,10 +49,10 @@ private:
 			return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
 		}
 		int sign = 1;
-		float sum = 0;
+		double sum = 0;
 		for (unsigned int i = 0; i < size; i++) {
-			float** submatrix = getSubmatrix(matrix, i, 0, size, size);
-			sum += (float) pow(-1,i)*matrix[0][i]*getDeterminant(submatrix,size-1);
+			double** submatrix = getSubmatrix(matrix, i, 0, size, size);
+			sum += (double) pow(-1,i)*matrix[0][i]*getDeterminant(submatrix,size-1);
 			deleteMatrix(submatrix,size-1);
 		}
 		return sum;
@@ -65,7 +65,7 @@ public:
 	Matrix():_width(1),_height(1) {
 		_matrix = createMatrix(_width, _height);
 	}
-	Matrix(float** matrix, unsigned int width, unsigned int height) :_width(width), _height(height),_matrix(matrix) {
+	Matrix(double** matrix, unsigned int width, unsigned int height) :_width(width), _height(height),_matrix(matrix) {
 	}
 	~Matrix() {
 		if (_canDelete) {
@@ -81,10 +81,10 @@ public:
 		std::cout<<"width: "<<_width<<", height: "<<_height<<"\n======================" << std::endl;
 		printMatrix(_matrix, _width, _height);
 	}
-	void set(unsigned int x, unsigned int y, float val) {
+	void set(unsigned int x, unsigned int y, double val) {
 		_matrix[y][x] = val;
 	}
-	void setMatrix(float** newMatrix, unsigned int newWidth, unsigned int newHeight) {
+	void setMatrix(double** newMatrix, unsigned int newWidth, unsigned int newHeight) {
 		deleteMatrix();
 		_matrix = newMatrix;
 		_width = newWidth;
@@ -92,7 +92,7 @@ public:
 	}
 	void transpose() {
 		//convert mxn to nxm matrix
-		float** matrix2 = createMatrix(_height, _width);
+		double** matrix2 = createMatrix(_height, _width);
 		for (unsigned int i = 0; i < _width; i++) {
 			for (unsigned int j = 0; j < _height; j++) {
 				matrix2[i][j] = _matrix[j][i];
@@ -108,7 +108,7 @@ public:
 		//
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
-				_matrix[i][j] = (float)(rand() % max);
+				_matrix[i][j] = (double)(rand() % max);
 			}
 		}
 	}
@@ -118,7 +118,7 @@ public:
 			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
 		}
-		float** newMatrix = _matrix;
+		double** newMatrix = _matrix;
 		if (_width !=b->_width && _height !=a->_height) {
 			newMatrix = createMatrix(b->_width, a->_height);
 			_width = b->_width;
@@ -126,7 +126,7 @@ public:
 		}
 		for (unsigned int i = 0; i < a->_height; i++) {
 			for (unsigned int j = 0; j < b->_width; j++) {
-				float sum = 0;
+				double sum = 0;
 				for (unsigned int k = 0; k < a->_width; k++) {
 					sum += a->_matrix[i][k] * b->_matrix[k][j];
 				}
@@ -134,7 +134,7 @@ public:
 			}
 		}
 	}
-	void copyMatrix(float** matrix, unsigned int width, unsigned int height) {
+	void copyMatrix(double** matrix, unsigned int width, unsigned int height) {
 		//copies a 2D array to this->_matrix
 		if (_width != width || _height != height) {
 			std::cout << MATRIX_ERR_COPY_DIMENSION.c_str() << std::endl;
@@ -149,7 +149,7 @@ public:
 	void copyMatrix(Matrix *matrix) {
 		copyMatrix(matrix->_matrix, matrix->_width, matrix->_height);
 	}
-	void copyMatrixTranspose(float** matrix, unsigned int width, unsigned int height) {
+	void copyMatrixTranspose(double** matrix, unsigned int width, unsigned int height) {
 		//copies a 2D array to this->_matrix
 		if (_width != height || _height != width) {
 			std::cout << MATRIX_ERR_COPY_DIMENSION.c_str() << std::endl;
@@ -178,7 +178,7 @@ public:
 		//invert this matrix
 		// to get inverse, get cofactor matrix, divide by determinant and transpose
 
-		float determinant = getDeterminant();
+		double determinant = getDeterminant();
 		if (_width != _height) {
 			std::cout << MATRIX_ERR_INVERT_NONSQUARE.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_INVERT_NONSQUARE;
@@ -187,17 +187,17 @@ public:
 			std::cout << MATRIX_ERR_INVERT_DETERMINANT.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_INVERT_DETERMINANT;
 		}
-		float** inverse = createMatrix(_width, _height);
+		double** inverse = createMatrix(_width, _height);
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				//swapping i and j for array indexes as need to take transpose
-				inverse[j][i] = (float) pow(-1,i+j) / determinant * getDeterminant(getSubmatrix(_matrix, j, i, _width, _height),_width-1);
+				inverse[j][i] = (double) pow(-1,i+j) / determinant * getDeterminant(getSubmatrix(_matrix, j, i, _width, _height),_width-1);
 			}
 		}
 		deleteMatrix();
 		_matrix = inverse;
 	}
-	void addScalar(float val) {
+	void addScalar(double val) {
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				_matrix[i][j] += val;
@@ -215,7 +215,7 @@ public:
 			}
 		}
 	}
-	void addMatrix(float** matrix, unsigned int width, unsigned int height) {
+	void addMatrix(double** matrix, unsigned int width, unsigned int height) {
 		if (_height != height || _width != width) {
 			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
@@ -226,7 +226,7 @@ public:
 			}
 		}
 	}
-	void subtractMatrix(float** matrix, unsigned int width, unsigned int height) {
+	void subtractMatrix(double** matrix, unsigned int width, unsigned int height) {
 		if (_height != height || _width != width) {
 			std::cout << MATRIX_ERR_ADD_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_ADD_DIMENSION;
@@ -237,7 +237,7 @@ public:
 			}
 		}
 	}
-	void multiplyScalar(float val) {
+	void multiplyScalar(double val) {
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				_matrix[i][j] *= val;
@@ -245,19 +245,19 @@ public:
 		}
 	}
 	
-	float** getMatrix() {
+	double** getMatrix() {
 		return _matrix;
 	}
-	float** multiplyMatrix(Matrix *other) {
+	double** multiplyMatrix(Matrix *other) {
 		//multiply this matrix by other (this matrix is on LHS)
 		if (_width != other->_height) {
 			std::cout << MATRIX_ERR_MULTIPLY_DIMENSION.c_str() << std::endl;
 			throw (std::string) MATRIX_ERR_MULTIPLY_DIMENSION;
 		}
-		float** newMatrix = createMatrix(other->_width, _height);
+		double** newMatrix = createMatrix(other->_width, _height);
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < other->_width; j++) {
-				float sum = 0;
+				double sum = 0;
 				for (unsigned int k = 0; k < _width; k++) {
 					sum += _matrix[i][k] * other->_matrix[k][j];
 				}
@@ -266,10 +266,10 @@ public:
 		}
 		return newMatrix;
 	}
-	float** getSubmatrix(float** matrix, unsigned int x, unsigned int y, unsigned int currentWidth, unsigned int currentHeight) {
+	double** getSubmatrix(double** matrix, unsigned int x, unsigned int y, unsigned int currentWidth, unsigned int currentHeight) {
 		//return an (height-1)x(width-1) matrix
-		//float
-		float** submatrix = createMatrix(currentWidth - 1, currentHeight - 1);
+		//double
+		double** submatrix = createMatrix(currentWidth - 1, currentHeight - 1);
 
 		int yIndex = 0;
 		for (unsigned int i = 0; i < currentHeight; i++) {
@@ -286,20 +286,20 @@ public:
 		}
 		return submatrix;
 	}
-	float** createMatrix(unsigned int width, unsigned int height) {
-		float** matrix = new float*[height];
+	double** createMatrix(unsigned int width, unsigned int height) {
+		double** matrix = new double*[height];
 		for (unsigned int i = 0; i < height; i++) {
-			matrix[i] = new float[width];
+			matrix[i] = new double[width];
 			for (unsigned int j = 0; j < width; j++) {
 				matrix[i][j] = 0;
 			}
 		}
 		return matrix;
 	}
-	float get(unsigned int x, unsigned int y) {
+	double get(unsigned int x, unsigned int y) {
 		return _matrix[y][x];
 	}
-	float getDeterminant() {
+	double getDeterminant() {
 		//return the determinant for this matrix; can only be done for square matrix
 		if (_width != _height) {
 			std::cout << MATRIX_ERR_DETERMINANT_NONSQUARE.c_str() << std::endl;
@@ -307,8 +307,8 @@ public:
 		}
 		return getDeterminant(_matrix,_width);
 	}
-	float getSum() {
-		float sum = 0; 
+	double getSum() {
+		double sum = 0; 
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				sum += _matrix[i][j];
@@ -316,8 +316,8 @@ public:
 		}
 		return sum;
 	}
-	float getSquareSum() {
-		float sum = 0;
+	double getSquareSum() {
+		double sum = 0;
 		for (unsigned int i = 0; i < _height; i++) {
 			for (unsigned int j = 0; j < _width; j++) {
 				sum += _matrix[i][j]*_matrix[i][j];
@@ -326,30 +326,30 @@ public:
 		return sum;
 	}
 
-	void operator+=(float val) {
+	void operator+=(double val) {
 		addScalar(val);
 	}
 	void operator+=(Matrix *other) {
 		addMatrix(other);
 	}
-	void operator-=(float val) {
+	void operator-=(double val) {
 		addScalar(-val);
 	}
-	void operator/=(float val) {
+	void operator/=(double val) {
 		multiplyScalar(1 / val);
 	}
-	void operator*=(float val) {
+	void operator*=(double val) {
 		multiplyScalar(val);
 	}
 	void operator*=(Matrix *other) {
 		unsigned int newWidth = 0; 
 		unsigned int newHeight = 0;
-		float** newMatrix = multiplyMatrix(other);
+		double** newMatrix = multiplyMatrix(other);
 		deleteMatrix();
 		_matrix = newMatrix;
 		_width = other->_width;
 	}
-	float** operator*(Matrix *other) {
+	double** operator*(Matrix *other) {
 		return multiplyMatrix(other);
 	}
 };

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-float** getData(MultiVariableFunction* f, float* trueParams, unsigned int len);
+double** getData(MultiVariableFunction* f, double* trueParams, unsigned int len);
 
 class TestFunction :public MultiVariableFunction {
 public:
@@ -12,51 +12,53 @@ public:
 
 	}
 	//Function of the form a^2*x^2 +b*x + a*c
-	float getValue(float* params, float &x) {
-		float a = params[0];
-		float b = params[1];
-		float c = params[2];
-		return a*a*x*x + b*x + a*c;
+	double getValue(double* params, double x) {
+		double a = params[0];
+		double b = params[1];
+		double c = params[2];
+		return a*x*x + b*x + c;
 	}
-	float* getJacobian(float* params, float* returnedArray, float &x) {
-		float a = params[0];
-		float b = params[1];
-		float c = params[2];
-		returnedArray[0] = 2*a*x*x + c;
+	double* getJacobian(double* params, double* returnedArray, double x) {
+		double a = params[0];
+		double b = params[1];
+		double c = params[2];
+		returnedArray[0] = x*x;
 		returnedArray[1] = x;
-		returnedArray[2] = a;
-		//std::cout << returnedArray[0] << "; " << returnedArray[1] << "; " << returnedArray[2] << std::endl;
+		returnedArray[2] = 1;
 		return returnedArray;
 	}
 };
 
-float getRand(float lower, float upper) {
-	float randNum = (rand() % 1000) / 1000.f;
-	float d = upper - lower;
+double getRand(double lower, double upper) {
+	double randNum = (rand() % 1000) / 1000.f;
+	double d = upper - lower;
 	return lower + d*randNum;
 }
 
-float** getData(MultiVariableFunction* f, float* trueParams, unsigned int len) {
-	float** data = new float*[2];
-	data[0] = new float[len];
-	data[1] = new float[len];
-	float start = -10;
-	float end = 10;
+double** getData(MultiVariableFunction* f, double* trueParams, unsigned int len) {
+	double** data = new double*[2];
+	data[0] = new double[len];
+	data[1] = new double[len];
+	double start = 0;
+	double end = 10;
 
-	for (int i = 0; i < 100; i++) {
-		data[0][i] = start + (end - start)*i / 100.f;
-		data[1][i] = f->getValue(trueParams, data[0][i]) *getRand(0.97f, 1.03f);
+	for (unsigned int i = 0; i < len; i++) {
+		data[0][i] = start + (end - start)*i / 100;
+		data[1][i] = f->getValue(trueParams, data[0][i])*0.95;
 	}
 	return data;
 }
 
 int main() {
-	float trueParams[3] = { 3,4,5 };
-	float initGuess[3] = { 5,4,3 };
-	unsigned int len = 100;
+	double trueParams[3] = { 3,4,5};
+	double initGuess[3] = { 1,2,1};
+	unsigned int len = 200;
 	MultiVariableFunction* func = new TestFunction();
 	LevenbergMarquardtAlgorithm lma(func);
-	float** data = getData(func, trueParams, len);
+	double** data = getData(func, trueParams, len);
 	lma.run(data, initGuess, len);
-	//std::cout << "finished in main" << std::endl;
 }
+
+/*
+
+*/
