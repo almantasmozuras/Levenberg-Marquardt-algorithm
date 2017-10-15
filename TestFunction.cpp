@@ -1,14 +1,17 @@
+#include "stdafx.h"
+
 #include "MultiVariableFunction.h"
 #include "LevenbergMarquardtAlgorithm.h"
 #include "Matrix.h"
 #include <cmath>
 #include <iostream>
 
-double** getData(MultiVariableFunction* f, double* trueParams, unsigned int len);
+void getData(MultiVariableFunction* f, double** data, double* trueParams, unsigned int nPoints, double noise);
+double getRand(double lower, double upper);
 
 class TestFunction :public MultiVariableFunction {
 public:
-	TestFunction():MultiVariableFunction(3) {
+	TestFunction() :MultiVariableFunction(3) {
 
 	}
 	//Function of the form a^2*x^2 +b*x + a*c
@@ -35,30 +38,51 @@ double getRand(double lower, double upper) {
 	return lower + d*randNum;
 }
 
-double** getData(MultiVariableFunction* f, double* trueParams, unsigned int len) {
-	double** data = new double*[2];
-	data[0] = new double[len];
-	data[1] = new double[len];
+void getData(MultiVariableFunction* f, double** data, double* trueParams, unsigned int nPoints, double noise) {
+	//double** data = new double*[2];
+	//data[0] = new double[nPoints];
+	//data[1] = new double[nPoints];
 	double start = 0;
 	double end = 10;
 
-	for (unsigned int i = 0; i < len; i++) {
+	for (unsigned int i = 0; i < nPoints; i++) {
 		data[0][i] = start + (end - start)*i / 100;
-		data[1][i] = f->getValue(trueParams, data[0][i])*0.95;
+		data[1][i] = f->getValue(trueParams, data[0][i]) + getRand(-noise, noise);//*0.95;;//
 	}
-	return data;
+	//return data;
 }
 
-int main() {
-	double trueParams[3] = { 3,4,5};
-	double initGuess[3] = { 1,2,1};
-	unsigned int len = 200;
+int main()
+{
+	double noise = 10;//0.1;
+	std::cout << "noise =	" << noise << std::endl;
+	double trueParams[3] = { 3,4,5 };//{ 10,8,9 };
+
+	double initGuess[3] = { 1,2,1 };//{ 0,0,0 }; 
+	unsigned int nPoints = 200;
 	MultiVariableFunction* func = new TestFunction();
+
 	LevenbergMarquardtAlgorithm lma(func);
-	double** data = getData(func, trueParams, len);
-	lma.run(data, initGuess, len);
+	double** data = new double*[2];
+	data[0] = new double[nPoints];
+	data[1] = new double[nPoints];
+	getData(func, data, trueParams, nPoints, noise);
+	std::cout <<"x" << "               " << "y" << std::endl;
+	for (unsigned int j = 0; j < nPoints; j++)
+	{
+		std::cout << data[0][j]<<"               "<< data[1][j] << std::endl;	
+	}
+
+
+
+	lma.run(data, initGuess, nPoints);
+
+	std::cout << "true params =  " << trueParams[0]<< "   " << trueParams[1] << "   "<< trueParams[2] << std::endl;
+
+	for (unsigned int i = 0; i < 2; i++) {
+		delete[] data[i];
+	}
+	delete[] data;
+	
+	return 0;
 }
-
-/*
-
-*/
