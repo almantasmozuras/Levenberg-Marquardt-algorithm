@@ -1,6 +1,6 @@
 #ifndef H_LMA_H
 #define H_LMA_H
-//http://people.duke.edu/~hpgavin/ce281/lm.pdf
+//http://people.duke.edu/~hpgavin/ce281/lm.pdf ???
 #include "MultiVariableFunction.h"
 #include "Matrix.h"
 #include<vector>
@@ -9,7 +9,7 @@ protected:
 	//_foo ->foo member func of class
 	//foo_ ->foo should not be deleted (created on heap outside class or is returned to user at some point)
 	bool print = false;
-	MultiVariableFunction* _func;
+	MultiVariableFunction* _MultVarFunc;
 	unsigned int _nParams = 0;//no of params, passed in constructor
 	unsigned int _nPoints = 0;//number of data points, passed in run() args
 	unsigned int _currentIterations = 0;
@@ -17,13 +17,13 @@ protected:
 	bool _canDelete = true;
 	bool _initialised = false;
 	double _lambda = 0.95f;//damping parameter
-	double _v = 0.95f;
+	double _v = 3.01f;//0.35f;//0.95f;0.01f;//
 	double lastSum = FLT_MAX;
 	double* _currentParams_;
 	double* _initGuess_;//initial parameter guess; passed in constructor
 	double* _partialDerivatives;//array of partial derivatives
-	double** _data_;//passed in constructor
-	double** _funcValues;
+	double** _data_;//passed in constructor ?
+	double** _MultVarFuncValues;
 	double** _jacobian;
 	Matrix *_matrixJ, *_matrixJT, *_matrixDiagJTJ, *_matrixYF, *_matrixLHS, *_matrixRHS, *_matrixDelta;
 	std::vector<Matrix*> matrixArr = { _matrixJ,_matrixJT,_matrixDiagJTJ,_matrixYF,_matrixLHS,_matrixRHS,_matrixDelta };
@@ -34,7 +34,7 @@ protected:
 
 		printStatus("DeleteAll");
 		delete[] _partialDerivatives;
-		delete[] _funcValues;
+		delete[] _MultVarFuncValues;
 		delete2DArray(_jacobian, _nPoints);
 		for (Matrix* a : matrixArr) {
 			delete a;
@@ -54,11 +54,11 @@ protected:
 		_partialDerivatives = new double[_nParams];
 		_currentParams_ = new double[_nParams];
 		_jacobian = new double*[_nPoints];
-		_funcValues = new double*[1];
-		_funcValues[0] = new double[_nPoints];
+		_MultVarFuncValues = new double*[1];
+		_MultVarFuncValues[0] = new double[_nPoints];
 		for (unsigned int i = 0; i < _nPoints; i++) {
 			_jacobian[i] = new double[_nParams];
-			_funcValues[0][i] = 0;
+			_MultVarFuncValues[0][i] = 0;
 			for (unsigned int j = 0; j < _nParams; j++) {
 				_jacobian[i][j] = 0;
 			}
@@ -77,8 +77,8 @@ protected:
 	void formJacobian() {
 		printStatus("formJacobian");
 		for (unsigned int i = 0; i < _nPoints; i++) {
-			_funcValues[0][i] = _data_[1][i] - _func->getValue(_currentParams_, _data_[0][i]);
-			_partialDerivatives = _func->getJacobian(_currentParams_, _partialDerivatives, _data_[0][i]);
+			_MultVarFuncValues[0][i] = _data_[1][i] - _MultVarFunc->getValue(_currentParams_, _data_[0][i]);
+			_partialDerivatives = _MultVarFunc->getJacobian(_currentParams_, _partialDerivatives, _data_[0][i]);
 			for (unsigned int j = 0; j < _nParams; j++) {
 				_jacobian[i][j] = _partialDerivatives[j];
 			}
@@ -94,11 +94,13 @@ protected:
 		_matrixRHS = new Matrix(1, _nParams);
 		_matrixDelta = new Matrix(1, _nParams);
 		
+
 		_currentIterations = 0;
 		while (true) {
 			_matrixDelta = getAdjustments();
 			adjustParameters();
 			//_matrixDelta->printMatrix("Delta");
+			std::cout<< "IterationNo=  " << _currentIterations << std::endl;			
 			if (checkSquareSum()) {
 				break;
 			}
@@ -109,14 +111,34 @@ protected:
 	bool checkSquareSum() {
 		_currentIterations++;
 		double temp = _matrixYF->getSquareSum();
+		
+		std::cout<< "SquareSum= " << temp << std::endl;
+		printArray(_currentParams_, _nParams);
+				
+		double g = pow(_matrixRHS->getSquareSum(), 1./2);
+		//std::cout << "g =  " << g << std::endl;
+
+		//suskaiciuojame |x|
+		double sumx2 = 0;
+		for (unsigned int i = 0; i < _nParams; i++) 
+		{	
+			sumx2 += _currentParams_[i] * _currentParams_[i];
+		}
+		sumx2 = pow(sumx2, 1./2);
+		//std::cout << "sumx2 =  " << sumx2 << std::endl;
+
+		double dx = pow(_matrixDelta->getSquareSum(), 1./2);
+		//std::cout << "dx =  " << dx << std::endl;
+
 		if (temp < lastSum) {
-			_lambda *= _v;
+			_lambda /= _v;//_lambda *= _v;
 		}
 		else {
-			_lambda /= _v;
+			_lambda *= _v;//_lambda /= _v;
 		}
 		lastSum = temp;
-		if (_currentIterations > _maxIterations) {
+		//if ( temp < 1.0e-10 || _currentIterations > _maxIterations ) {
+		if (g < 1.0e-6 || dx < 1.0e-8*(sumx2 + 1.0e-8) || _currentIterations > _maxIterations) {
 			return true;
 		}
 		return false;
@@ -125,6 +147,7 @@ protected:
 		//return the left hand side of the LMA equation (JT * J  +  lambda*diag(JT*J))
 		printStatus("getLHS");
 		_matrixJ->copyMatrix(_jacobian,_nParams,_nPoints);
+		//_matrixJ ->printMatrix();//idejau
 		_matrixJT->copyMatrixTranspose(_matrixJ);
 		_matrixLHS->fromMatrixMultiplication(_matrixJT, _matrixJ);
 		_matrixDiagJTJ->copyMatrix(_matrixLHS);
@@ -135,10 +158,13 @@ protected:
 		return _matrixLHS;
 	}
 	Matrix* getRHS() {
-		//_y_ and _funcValues are double[1][_nPoints] (ie height 1), therefore form from matrix transpose
+		//_y_ and _MultVarFuncValues are double[1][_nPoints] (ie height 1), therefore form from matrix transpose
 		printStatus("getRHS");
-		_matrixYF->copyMatrixTranspose(_funcValues, _nPoints, 1);
+		_matrixYF->copyMatrixTranspose(_MultVarFuncValues, _nPoints, 1);
+		//_matrixYF->printMatrix();//idejau
 		_matrixRHS->fromMatrixMultiplication(_matrixJT, _matrixYF);
+		//idejau gradiento skaiciavimui:
+		//_matrixJTf->copyMatrix(_matrixRHS);
 		return _matrixRHS;
 	}
 	Matrix* getAdjustments() {
@@ -146,16 +172,11 @@ protected:
 		_matrixLHS = getLHS();
 		_matrixRHS = getRHS();
 		_matrixDelta->fromMatrixMultiplication(_matrixLHS, _matrixRHS);
-		/*_matrixJ->printMatrix("J");
-		_matrixJT->printMatrix("J^T");
-		_matrixDiagJTJ->printMatrix("Diag");
-		_matrixLHS->printMatrix("LHS");
-		_matrixYF->printMatrix("Y-F");
-		_matrixRHS->printMatrix("RHS");
-		_matrixDelta->printMatrix("Delta");
-		*/
+
 		return _matrixDelta;
 	}
+	
+	
 	void printStatus(std::string str) {
 		if (print) {
 			std::cout << str.c_str() << std::endl;
@@ -173,7 +194,7 @@ protected:
 		}
 	}
 public:
-	LevenbergMarquardtAlgorithm(MultiVariableFunction* func):_func(func),_nParams(func->getNParams()) {
+	LevenbergMarquardtAlgorithm(MultiVariableFunction* func):_MultVarFunc(func),_nParams(func->getNParams()) {
 	}
 	LevenbergMarquardtAlgorithm() {
 
